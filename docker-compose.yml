@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+
+  db:
+    image: mysql
+    restart: always
+    command: --init-file /data/application/init.sql
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./initdb.sql:/data/application/init.sql
+
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/code
+    links:
+      - db
+      - pubsub_src
+    environment:
+      PUBSUB_EMULATOR_HOST: "pubsub_src:8085"
+      PUBSUB_PROJECT_ID: "demo-project"
+
+
+  pubsub_src:
+    image: google/cloud-sdk:latest
+    command: ["gcloud", "beta", "emulators", "pubsub", "start", "--project=demo-project", "--host-port=0.0.0.0:8085"]
+    ports:
+      - "8085:8085"
+
+
+
